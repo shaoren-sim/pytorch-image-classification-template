@@ -1,0 +1,156 @@
+# General experiment settings
+EXPERIMENT:
+  WORKDIR: ./workdir  # Workdir to save training logs and checkpoints.
+  DEVICE: cuda:0  # Device to use for training, can be 'cpu' or 'cuda:N'
+  SEED: 3407      # Seed for NumPy, Python and PyTorch.
+
+# Model settings
+MODEL:
+  # Model to use.
+  # For timm models, append `timm_` prefix to model name from timm.list_models()
+  NAME: timm_convnext_atto
+  USE_PRETRAIN: true    # For timm models, attempt to load pretrained weights.
+  DROPOUT_RATE: 0.0     # Dropout rate for classification layer.
+  INPUT_SIZE: 224       # Image input size. Is assumed to be square.
+
+# Dataset options
+DATA:
+  # Dataset can be a path to a local folder. This will use it as a torchvision.datasets.ImageFolder dataset.
+  # This assumes it is a folder consisting of sub-folders with class names, which in turn contain images.
+  # Alternatively, use a torchvision dataset using torchvision_{dataset_name}. See https://pytorch.org/vision/stable/datasets.html#image-classification for a list of datasets
+  DATASET: path/to/image/folder   # Or torchvision_cifar10 etc.
+  PRE_SPLIT_TRAIN_VAL: false      # If using a local ImageFolder, if the folders are pre-split into train/val folders, this will load the pre-defined splits.
+  # Alternatively, if using a local ImageFolder with no pre-defined splits, use these to define your train/validation split.
+  SPLIT_TRAIN: 0.8
+  SPLIT_EVAL: 0.2
+  # RGB values for pixel-wise normalization.
+  # For ImageNet pretrained weights, use the following.
+  # DATA.PIXEL_MEAN = [0.485, 0.456, 0.406]
+  # DATA.PIXEL_STD = [0.229, 0.224, 0.225]
+  PIXEL_MEAN:
+  - 0.0
+  - 0.0
+  - 0.0
+  PIXEL_STD:
+  - 1.0
+  - 1.0
+  - 1.0
+
+# Augmentation settings
+AUGMENTATIONS:
+  # Training augmentations are adapted from the ConvNeXt-V2 repo (https://github.com/facebookresearch/ConvNeXt-V2/blob/main/datasets.py#L50), with some components deactivated like the AutoAugment policies.
+  # This is Imagenet-based, see timm.data.create_transform for implementation.
+  TRAIN:
+    DISABLE: false    # Flag to disable the training augmentations.
+    HFLIP_PROB: 0.5   # Probability of horizontal flips.
+    VFLIP_PROB: 0.0   # Probability for vertical flipping.
+    COLOR_JITTER_PROB: 0.4    # Probability for color jitter.
+    AUTO_AUGMENT_POLICY: null   # Auto augment policy. Untested, but ConvNeXt-V2 had the option of 'rand-m9-mstd0.5-inc1'
+    INTERPOLATION_MODE: bilinear    # Resizing interpolation settings.
+    # Random Erase settings. See https://ayasyrev.github.io/timmdocs/RandomErase for more details.
+    RANDOM_ERASE_MODE: const
+    RANDOM_ERASE_PROB: 0.0
+    RANDOM_ERASE_COUNT: 1
+  # Evaluation augmentations are also primarily from ConvNeXt-V2.
+  EVAL:
+    CROP_PCT: null  # Cropping percentage to use for evaluation.
+
+# Dataloader-specific settings.
+DATALOADER:
+  PER_STEP_BATCH_SIZE: 64   # Per-step batch size.
+  NUM_WORKERS: 4            # Dataloader workers to use
+  # Gradient accumulation allows for larger batch sizes to be simulated.
+  # This only happens when DO_GRADIENT_ACCUMULATION=True.
+  # The simulated batch sizes depend on the number of GRADIENT_ACCUMULATION_STEPS.
+  # If PER_STEP_BATCH_SIZE=64 and GRADIENT_ACCUMULATION_STEPS=4, the apparent batch size will be PER_STEP_BATCH_SIZE * GRADIENT_ACCUMULATION_STEPS=256
+  DO_GRADIENT_ACCUMULATION: false
+  GRADIENT_ACCUMULATION_STEPS: 16
+
+# Loss function settings. Variations of CrossEntropyLoss are used.
+# May be overriden if Mixup/Cutmix is active.
+LOSS_FUNCTION:
+  LABEL_SMOOTHING: 0.1    # Label smoothing loss will be used with values larger than 0.0.
+
+# Optimizer settings
+# See classification/builders/optimizer.py for implementation details.
+OPTIMIZER:
+  TYPE: AdamW   # Most PyTorch optimizers from https://pytorch.org/docs/stable/optim.html#algorithms are implemented.
+  BASE_LEARNING_RATE: 0.0005    # Base learning rate. See BACKEND.SCALE_LEARNING_RATE for details of how this might be scaled by batch size.
+  WEIGHT_DECAY: 0.05    # Weight decay for optimizers.
+  MOMENTUM: 0.9         # Momentum for supported optimizers like SGD.
+  BETAS:    # Betas for Adam-derivative optimizers.
+  - 0.9
+  - 0.999
+  EPS: 1.0e-08    # Numerical stability term for optimizer.
+
+# Learning rate scheduler settings.
+# See classification/builders/scheduler.py for implementation details.
+LR_SCHEDULER:
+  # Included types include 'None', 'CosineAnnealingWithWarmup', 'HalfCycleCosineWithWarmup', 'StepLR', 'MultiplicativeLR', 'MultiStepLR', 'ExponentialLR', 'PolynomialLR', 'CosineAnnealingLR', 'CosineAnnealingWarmRestarts'.
+  TYPE: CosineAnnealingWithWarmup
+  WARMUP_STEPS: 20    # For 'CosineAnnealingWithWarmup' and 'HalfCycleCosineWithWarmup', this is the number of warmup steps.
+  LR_MULTIPLICATIVE_FACTOR: 0.95    # Any scheduler that uses a multiplicative factor, such as StepLR or ExponentialLR, will use this. Note that this might be multiplicative or divisive depending on the scheduler type.
+  MILESTONES:   # For MultiStepLR specifically, these are the epochs where the multiplicative factor is applied.
+  - 60
+  - 80
+  MIN_LR: 1.0e-06   # For 'HalfCycleCosineWithWarmup' specifically, this sets the minimum LR, though this seems inconsistent, might be an implementaiton issue.
+  UPDATE_PERIOD: 5  # For 'PolynomialLR' and 'StepLR', this is the number of epochs between each update step.
+
+# Training settings.
+TRAINING:
+  EPOCHS: 100   # Number of epochs
+  USE_AMP: true # Whether to use automatic mixed precision
+
+# Evaluation and model-selection parameters
+EVALUATION:
+  # Model selection metric.
+  # Available options include:
+  # accuracy, recall, precision, f1_score, macro_accuracy, macro_recall, macro_precision, macro_f1_score, macro_auc_roc
+  METRIC: accuracy        # Best metric to keep track of while saving the best.ckpt model.
+  TRACK_EMA: false        # Whether to run evaluation on the EMA model.
+  SELECT_EMA_MODEL: false   # If True, will save the best EMA model.
+
+# Bag Of Tricks. See classification/builders/bag_of_tricks.py for implementation details.
+BAG_OF_TRICKS:
+  # MixUp (https://arxiv.org/abs/1710.09412)
+  # CutMix (https://arxiv.org/abs/1905.04899)
+  MIXUP_CUTMIX:
+    DO_CUTMIX: true     # Flag to activate/deactivate CutMix/MixUp
+    CUTMIX_ALPHA: 0.1   # Alpha parameter for CutMix. CutMix is not active if cutmix_alpha = 0.0.
+    CUTMIX_MINMAX: null # CutMix min/max ratio, overrides alpha and enables CutMix if set
+    MIXUP_ALPHA: 0.1    # Alpha parameter for Mixup. Mixup is not active if mixup_alpha = 0.0.
+    MIXUP_MODE: batch   # How to apply mixup/cutmix params. Per "batch", "pair", or "elem".
+    MIXUP_PROB: 1.0     # Probability of performing mixup or cutmix when either/both is enabled.
+    SWITCH_PROB: 0.5    # Probability of switching to cutmix when both mixup and cutmix enabled.
+  
+  # Stochastic Depth (https://github.com/huggingface/pytorch-image-models/blob/a6e8598aaf90261402f3e9e9a3f12eac81356e9d/timm/models/layers/drop.py#L140)
+  # Only works on supported timm models, like ConvNeXt.
+  STOCHASTIC_DEPTH:
+    DROP_PATH_RATE: 0.1
+  
+  # Exponential Moving Average (EMA) of model weights
+  EMA:
+    DO_EMA: false     # Flag to activate or deactivate EMA model weight averaging.
+    EMA_DECAY: 0.99   # EMA decay factor. Should be between [0.0, 1.0]. For example, if set to 0.99, the AveragedModel will be updated by the 0.99*model_parameters.
+    EMA_UPDATE_INTERVAL: 5    # How many update iterations (NOT EPOCHS) between each EMA update.
+  
+  # Gradient clipping.
+  GRADIENT_CLIPPING:
+    DO_GRADIENT_CLIPPING: false   # Flag to activate or deactivate gradient clipping.
+    METHOD: norm      # 'Norm' or 'value'-based gradient clipping.
+    NORM_MAX: 5.0     # Max norm before clipping.
+    NORM_TYPE: 2      # L{N} norm for clipping. Defaults to L2.
+    VALUE: 5.0        # Max value before clipping.
+
+# Logging settings.
+LOGGING:
+  DO_TENSORBOARD_LOGGING: true    # Whether to do tensorboard logging.
+  LOGGING_ITER_INTERVAL: 10       # For step iteration, how many update iterations (NOT EPOCHS) between each log of loss.
+
+# Miscellaneous settings.
+BACKEND:
+  CUDNN_BENCHMARK: false    # Whether to activate cudnn.benchmark, theoretically increases performance.
+  DATALOADER_PIN_MEMORY: false  # Whether to pin dataloader to GPU memory, theoretically increases performance.
+  DATASET_DOWNLOAD_FOLDER: ./dataset    # For torchvision datasets, the `root` argument will download data into this folder.
+  SCALE_LEARNING_RATE: false            # Whether to scale learning rate based on the batch size. absolute_lr = base_lr * total_batch_size / 256
+

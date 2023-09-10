@@ -12,17 +12,17 @@ AUGMENTATIONS:
     RANDOM_ERASE_PROB: 0.0
     VFLIP_PROB: 0.0
 BACKEND:
-  CUDNN_BENCHMARK: false
-  DATALOADER_PIN_MEMORY: false
+  CUDNN_BENCHMARK: true
+  DATALOADER_PIN_MEMORY: true
   DATASET_DOWNLOAD_FOLDER: ./dataset
-  SCALE_LEARNING_RATE: false
+  SCALE_LEARNING_RATE: true
 BAG_OF_TRICKS:
   EMA:
     EMA_DECAY: 0.99
     EMA_UPDATE_INTERVAL: 5
     DO_EMA: false
   GRADIENT_CLIPPING:
-    DO_GRADIENT_CLIPPING: false
+    DO_GRADIENT_CLIPPING: true
     METHOD: norm
     NORM_MAX: 5.0
     NORM_TYPE: 2
@@ -36,17 +36,18 @@ BAG_OF_TRICKS:
     MIXUP_PROB: 1.0
     SWITCH_PROB: 0.5
   STOCHASTIC_DEPTH:
-    DROP_PATH_RATE: 0.1
+    DROP_PATH_RATE: 0.05
 DATA:
-  DATASET: path/to/image/folder
+  DATASET: torchvision_cifar10
+  PRE_SPLIT_TRAIN_VAL: false
   PIXEL_MEAN:
-  - 0.0
-  - 0.0
-  - 0.0
+  - 0.485
+  - 0.456
+  - 0.406
   PIXEL_STD:
-  - 1.0
-  - 1.0
-  - 1.0
+  - 0.229
+  - 0.224
+  - 0.225
   SPLIT_EVAL: 0.2
   SPLIT_TRAIN: 0.8
 DATALOADER:
@@ -59,9 +60,9 @@ EVALUATION:
   SELECT_EMA_MODEL: false
   TRACK_EMA: false
 EXPERIMENT:
-  DEVICE: cuda:0
+  DEVICE: cpu
   SEED: 3407
-  WORKDIR: ./workdir
+  WORKDIR: ./workdir_quickstart_cifar10
 LOGGING:
   DO_TENSORBOARD_LOGGING: true
   LOGGING_ITER_INTERVAL: 10
@@ -75,22 +76,22 @@ LR_SCHEDULER:
   MIN_LR: 1.0e-06
   TYPE: CosineAnnealingWithWarmup
   UPDATE_PERIOD: 5
-  WARMUP_STEPS: 20
+  WARMUP_STEPS: 5
 MODEL:
   DROPOUT_RATE: 0.0
-  INPUT_SIZE: 224
+  INPUT_SIZE: 32
   NAME: timm_convnext_atto
-  USE_PRETRAIN: true
+  USE_PRETRAIN: true # For comapring against imagenette benchmarks, pretraining should not be used.
 OPTIMIZER:
-  BASE_LEARNING_RATE: 0.0005
+  BASE_LEARNING_RATE: 0.05
   BETAS:
   - 0.9
   - 0.999
-  EPS: 1.0e-08
+  EPS: 1.0e-04
   MOMENTUM: 0.9
   TYPE: AdamW
-  WEIGHT_DECAY: 0.05
+  WEIGHT_DECAY: 0.001
 TRAINING:
-  EPOCHS: 100
+  EPOCHS: 20
   USE_AMP: true
 

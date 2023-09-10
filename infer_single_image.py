@@ -49,7 +49,7 @@ def get_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description="Image classification inference.")
     parser.add_argument(
-        "--config-file",
+        "--cfg",
         required=True,
         metavar="FILE",
         help="Path to YACS config file in .yaml format.",
@@ -177,19 +177,21 @@ def main(cfg: CfgNode, ckpt_path: str, img_path: str, device: str):
         confidence = torch.nn.functional.softmax(output, dim=1)
         index = output.cpu().numpy().argmax()
         class_name = idx_to_class[index]
-        print(
-            f"Class is '{class_name}' with confidence of {confidence[0][index]*100:.4f}%"
-        )
 
         # Printing the per-class confidences.
         for ind, conf in enumerate(confidence[0]):
             print(f"{idx_to_class[ind]:<15}: {conf*100:.4f}%")
 
+        # Print the expected class label.
+        print(
+            f"Class is '{class_name}' with confidence of {confidence[0][index]*100:.4f}%"
+        )
+
 
 if __name__ == "__main__":
     # Parse arguments from the CLI.
     args = get_parser().parse_args()
-    config_file = args.config_file
+    config_file = args.cfg
     cli_overrides = args.overrides
     ckpt = args.ckpt
     img = args.img

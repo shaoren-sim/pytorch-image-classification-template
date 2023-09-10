@@ -46,7 +46,7 @@ def get_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description="Image classification training.")
     parser.add_argument(
-        "--config-file",
+        "--cfg",
         required=True,
         metavar="FILE",
         help="Path to YACS config file in .yaml format.",
@@ -569,7 +569,7 @@ def main(cfg: CfgNode, resume_ckpt_path: str = None):
 if __name__ == "__main__":
     # Parse arguments from the CLI.
     args = get_parser().parse_args()
-    config_file = args.config_file
+    config_file = args.cfg
     cli_overrides = args.overrides
     existing_ckpt = args.ckpt
 

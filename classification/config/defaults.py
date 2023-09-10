@@ -2,7 +2,7 @@ from yacs.config import CfgNode as CN
 
 _C = CN()
 
-# Generatl experiment settings.
+# General experiment settings.
 _C.EXPERIMENT = CN()
 _C.EXPERIMENT.WORKDIR = "./workdir"
 _C.EXPERIMENT.DEVICE = "cuda:0"
@@ -55,7 +55,7 @@ _C.DATALOADER = CN()
 _C.DATALOADER.PER_STEP_BATCH_SIZE = 64
 _C.DATALOADER.NUM_WORKERS = 4
 # Gradient accumulation allows for larger batch sizes to be simulated.
-# This only happens when DO_GRADIENT_ACCUMULATION=Truie.
+# This only happens when DO_GRADIENT_ACCUMULATION=True.
 # The simulated batch sizes depend on the number of GRADIENT_ACCUMULATION_STEPS.
 # If PER_STEP_BATCH_SIZE=32 and GRADIENT_ACCUMULATION_STEPS=32, the apparent batch size will be PER_STEP_BATCH_SIZE*GRADIENT_ACCUMULATION_STEPS=1024
 _C.DATALOADER.DO_GRADIENT_ACCUMULATION = False
